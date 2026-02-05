@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Install Scheduler - Route Optimization for Ireland</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.95;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 6px 12px;
+            font-size: 0.9em;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+        }
+
+        .stat-box h4 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .stat-box .value {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.visible {
+            display: block;
+        }
+
+        .team-result {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .team-result h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .route-stop {
+            background: white;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .route-stop.depot {
+            border-left-color: #10b981;
+        }
+
+        .route-stop-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .route-stop-number {
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .route-stop-time {
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .route-stop-details {
+            color: #374151;
+            font-size: 0.95em;
+        }
+
+        .warning {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            color: #92400e;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚚 Smart Install Scheduler</h1>
+            <p>Route optimization for installation teams using Eircodes</p>
+        </div>
+
+        <!-- Team Management -->
+        <div class="card">
+            <h2>Installation Teams</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Team Name</label>
+                    <input type="text" id="teamName" placeholder="e.g., Team A">
+                </div>
+                <div class="form-group">
+                    <label>Depot Eircode</label>
+                    <input type="text" id="teamDepot" placeholder="e.g., D02 XY45">
+                </div>
+                <div class="form-group" style="align-self: end;">
+                    <button class="btn-primary" onclick="addTeam()">Add Team</button>
+                </div>
+            </div>
+
+            <div id="teamsList"></div>
+        </div>
+
+        <!-- Job Entry -->
+        <div class="card">
+            <h2>Installation Jobs</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Job Eircode *</label>
+                    <input type="text" id="jobEircode" placeholder="e.g., T12 X2R6">
+                </div>
+                <div class="form-group">
+                    <label>Duration (minutes) *</label>
+                    <input type="number" id="jobDuration" placeholder="e.g., 60" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Assign to Team *</label>
+                    <select id="jobTeam">
+                        <option value="">Select team...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Time Window Start (Optional)</label>
+                    <input type="time" id="jobWindowStart">
+                </div>
+                <div class="form-group">
+                    <label>Time Window End (Optional)</label>
+                    <input type="time" id="jobWindowEnd">
+                </div>
+                <div class="form-group" style="align-self: end;">
+                    <button class="btn-primary" onclick="addJob()">Add Job</button>
+                </div>
+            </div>
+
+            <div id="jobsList"></div>
+        </div>
+
+        <!-- Configuration -->
+        <div class="card">
+            <h2>Schedule Configuration</h2>
+            <div class="config-grid">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="scheduleDate">
+                </div>
+                <div class="form-group">
+                    <label>Working Hours Start</label>
+                    <input type="time" id="workStart" value="08:00">
+                </div>
+                <div class="form-group">
+                    <label>Working Hours End</label>
+                    <input type="time" id="workEnd" value="17:00">
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-success" onclick="optimizeSchedule()" style="font-size: 1.2em; padding: 15px 30px;">
+                    ⚡ Optimize Routes
+                </button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="card results-section" id="resultsSection">
+            <h2>Optimized Schedule</h2>
+            <div id="resultsContent"></div>
+            <div class="action-buttons">
+                <button class="btn-primary" onclick="exportCSV()">📥 Export CSV</button>
+                <button class="btn-secondary" onclick="hideResults()">Close Results</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let teams = [];
+        let jobs = [];
+        let optimizedSchedules = [];
+        let geocodeCache = {};
+
+        // Set default date to today
+        document.getElementById('scheduleDate').valueAsDate = new Date();
+
+        // Team Management
+        function addTeam() {
+            const name = document.getElementById('teamName').value.trim();
+            const depot = document.getElementById('teamDepot').value.trim().toUpperCase();
+
+            if (!name || !depot) {
+                alert('Please enter team name and depot Eircode');
+                return;
+            }
+
+            const team = {
+                id: Date.now().toString(),
+                name: name,
+                depotEircode: depot,
+                depotCoords: null
+            };
+
+            teams.push(team);
+            updateTeamsList();
+            updateJobTeamDropdown();
+
+            document.getElementById('teamName').value = '';
+            document.getElementById('teamDepot').value = '';
+        }
+
+        function removeTeam(id) {
+            teams = teams.filter(t => t.id !== id);
+            jobs = jobs.filter(j => j.assignedTeam !== id);
+            updateTeamsList();
+            updateJobTeamDropdown();
+            updateJobsList();
+        }
+
+        function updateTeamsList() {
+            const container = document.getElementById('teamsList');
+            if (teams.length === 0) {
+                container.innerHTML = '<div class="empty-state">No teams added yet</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Team Name</th>
+                            <th>Depot Eircode</th>
+                            <th>Jobs Assigned</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${teams.map(team => `
+                            <tr>
+                                <td><strong>${team.name}</strong></td>
+                                <td>${team.depotEircode}</td>
+                                <td>${jobs.filter(j => j.assignedTeam === team.id).length} jobs</td>
+                                <td><button class="btn-danger" onclick="removeTeam('${team.id}')">Delete</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function updateJobTeamDropdown() {
+            const select = document.getElementById('jobTeam');
+            select.innerHTML = '<option value="">Select team...</option>' +
+                teams.map(team => `<option value="${team.id}">${team.name}</option>`).join('');
+        }
+
+        // Job Management
+        function addJob() {
+            const eircode = document.getElementById('jobEircode').value.trim().toUpperCase();
+            const duration = parseInt(document.getElementById('jobDuration').value);
+            const teamId = document.getElementById('jobTeam').value;
+            const windowStart = document.getElementById('jobWindowStart').value;
+            const windowEnd = document.getElementById('jobWindowEnd').value;
+
+            if (!eircode || !duration || !teamId) {
+                alert('Please fill in Eircode, Duration, and Team');
+                return;
+            }
+
+            if (duration <= 0) {
+                alert('Duration must be greater than 0');
+                return;
+            }
+
+            const job = {
+                id: Date.now().toString(),
+                eircode: eircode,
+                coords: null,
+                duration: duration,
+                timeWindow: (windowStart && windowEnd) ? { start: windowStart, end: windowEnd } : null,
+                assignedTeam: teamId,
+                address: ''
+            };
+
+            jobs.push(job);
+            updateJobsList();
+
+            // Clear form
+            document.getElementById('jobEircode').value = '';
+            document.getElementById('jobDuration').value = '';
+            document.getElementById('jobWindowStart').value = '';
+            document.getElementById('jobWindowEnd').value = '';
+        }
+
+        function removeJob(id) {
+            jobs = jobs.filter(j => j.id !== id);
+            updateJobsList();
+        }
+
+        function updateJobsList() {
+            const container = document.getElementById('jobsList');
+            if (jobs.length === 0) {
+                container.innerHTML = '<div class="empty-state">No jobs added yet</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Eircode</th>
+                            <th>Duration</th>
+                            <th>Team</th>
+                            <th>Time Window</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${jobs.map(job => {
+                            const team = teams.find(t => t.id === job.assignedTeam);
+                            const window = job.timeWindow ?
+                                `${job.timeWindow.start} - ${job.timeWindow.end}` : '-';
+                            return `
+                                <tr>
+                                    <td>${job.eircode}</td>
+                                    <td>${job.duration} min</td>
+                                    <td>${team ? team.name : 'Unknown'}</td>
+                                    <td>${window}</td>
+                                    <td><button class="btn-danger" onclick="removeJob('${job.id}')">Delete</button></td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Geocoding
+        async function geocodeEircode(eircode) {
+            // Check cache first
+            if (geocodeCache[eircode]) {
+                return geocodeCache[eircode];
+            }
+
+            // Rate limiting: wait 1 second between requests
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(eircode)},Ireland&format=json&limit=1`;
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'User-Agent': 'SmartInstallScheduler/1.0'
+                    }
+                });
+                const data = await response.json();
+
+                if (data && data.length > 0) {
+                    const result = {
+                        lat: parseFloat(data[0].lat),
+                        lon: parseFloat(data[0].lon),
+                        address: data[0].display_name
+                    };
+                    geocodeCache[eircode] = result;
+                    return result;
+                } else {
+                    throw new Error(`Could not geocode ${eircode}`);
+                }
+            } catch (error) {
+                throw new Error(`Geocoding failed for ${eircode}: ${error.message}`);
+            }
+        }
+
+        // Distance calculation using Haversine formula
+        function calculateDistance(coord1, coord2) {
+            const R = 6371; // Earth's radius in km
+            const dLat = toRad(coord2.lat - coord1.lat);
+            const dLon = toRad(coord2.lon - coord1.lon);
+
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(toRad(coord1.lat)) * Math.cos(toRad(coord2.lat)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function toRad(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+        // Route Optimization - Greedy Nearest Neighbor
+        function optimizeRoute(jobs, depotCoords) {
+            if (jobs.length === 0) return [];
+            if (jobs.length === 1) return jobs;
+
+            const route = [];
+            const unvisited = [...jobs];
+            let currentPos = depotCoords;
+
+            while (unvisited.length > 0) {
+                let nearest = null;
+                let minDistance = Infinity;
+
+                for (const job of unvisited) {
+                    const distance = calculateDistance(currentPos, job.coords);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearest = job;
+                    }
+                }
+
+                route.push(nearest);
+                currentPos = nearest.coords;
+                const index = unvisited.indexOf(nearest);
+                unvisited.splice(index, 1);
+            }
+
+            return route;
+        }
+
+        // Schedule Generation
+        function generateSchedule(route, depotCoords, startTime, endTime) {
+            const avgSpeedKmh = 50; // km/h
+            const schedule = [];
+
+            let currentTime = parseTime(startTime);
+            let currentPos = depotCoords;
+            let totalTravelTime = 0;
+            let totalJobTime = 0;
+
+            // Start at depot
+            schedule.push({
+                type: 'depot',
+                location: 'Depot (Start)',
+                time: formatTime(currentTime),
+                duration: 0,
+                travelTime: 0
+            });
+
+            // Process each job
+            for (let i = 0; i < route.length; i++) {
+                const job = route[i];
+
+                // Calculate travel time to this job
+                const distance = calculateDistance(currentPos, job.coords);
+                const travelMinutes = Math.ceil((distance / avgSpeedKmh) * 60);
+                totalTravelTime += travelMinutes;
+
+                // Add travel time to current time
+                currentTime += travelMinutes;
+
+                const jobStartTime = currentTime;
+                const jobEndTime = currentTime + job.duration;
+                currentTime = jobEndTime;
+                totalJobTime += job.duration;
+
+                schedule.push({
+                    type: 'job',
+                    job: job,
+                    stopNumber: i + 1,
+                    startTime: formatTime(jobStartTime),
+                    endTime: formatTime(jobEndTime),
+                    duration: job.duration,
+                    travelTime: travelMinutes,
+                    distance: distance.toFixed(1)
+                });
+
+                currentPos = job.coords;
+            }
+
+            // Return to depot
+            const returnDistance = calculateDistance(currentPos, depotCoords);
+            const returnTravelMinutes = Math.ceil((returnDistance / avgSpeedKmh) * 60);
+            totalTravelTime += returnTravelMinutes;
+            currentTime += returnTravelMinutes;
+
+            schedule.push({
+                type: 'depot',
+                location: 'Depot (Return)',
+                time: formatTime(currentTime),
+                duration: 0,
+                travelTime: returnTravelMinutes,
+                distance: returnDistance.toFixed(1)
+            });
+
+            const endTimeMinutes = parseTime(endTime);
+            const overtime = currentTime > endTimeMinutes ? currentTime - endTimeMinutes : 0;
+
+            return {
+                schedule,
+                totalTravelTime,
+                totalJobTime,
+                finishTime: formatTime(currentTime),
+                overtime,
+                exceedsWorkingHours: overtime > 0
+            };
+        }
+
+        function parseTime(timeString) {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function formatTime(minutes) {
+            const hours = Math.floor(minutes / 60) % 24;
+            const mins = minutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+        }
+
+        // Main Optimization Function
+        async function optimizeSchedule() {
+            if (teams.length === 0) {
+                alert('Please add at least one team');
+                return;
+            }
+
+            if (jobs.length === 0) {
+                alert('Please add at least one job');
+                return;
+            }
+
+            const startTime = document.getElementById('workStart').value;
+            const endTime = document.getElementById('workEnd').value;
+
+            if (!startTime || !endTime) {
+                alert('Please set working hours');
+                return;
+            }
+
+            // Show loading
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContent = document.getElementById('resultsContent');
+            resultsSection.classList.add('visible');
+            resultsContent.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Geocoding addresses and optimizing routes...</p>
+                </div>
+            `;
+
+            try {
+                // Geocode all depots
+                for (const team of teams) {
+                    if (!team.depotCoords) {
+                        const coords = await geocodeEircode(team.depotEircode);
+                        team.depotCoords = { lat: coords.lat, lon: coords.lon };
+                    }
+                }
+
+                // Geocode all jobs
+                for (const job of jobs) {
+                    if (!job.coords) {
+                        const coords = await geocodeEircode(job.eircode);
+                        job.coords = { lat: coords.lat, lon: coords.lon };
+                        job.address = coords.address;
+                    }
+                }
+
+                // Optimize route for each team
+                optimizedSchedules = [];
+                for (const team of teams) {
+                    const teamJobs = jobs.filter(j => j.assignedTeam === team.id);
+
+                    if (teamJobs.length === 0) continue;
+
+                    const route = optimizeRoute(teamJobs, team.depotCoords);
+                    const schedule = generateSchedule(route, team.depotCoords, startTime, endTime);
+
+                    optimizedSchedules.push({
+                        team,
+                        route,
+                        schedule
+                    });
+                }
+
+                displayResults();
+
+            } catch (error) {
+                resultsContent.innerHTML = `
+                    <div class="warning">
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function displayResults() {
+            const resultsContent = document.getElementById('resultsContent');
+
+            let html = '';
+
+            for (const { team, route, schedule } of optimizedSchedules) {
+                const warnings = [];
+                if (schedule.exceedsWorkingHours) {
+                    warnings.push(`Schedule exceeds working hours by ${schedule.overtime} minutes`);
+                }
+
+                html += `
+                    <div class="team-result">
+                        <h3>${team.name}</h3>
+
+                        ${warnings.length > 0 ? `
+                            <div class="warning">
+                                ⚠️ ${warnings.join(', ')}
+                            </div>
+                        ` : ''}
+
+                        <div class="stats">
+                            <div class="stat-box">
+                                <h4>Total Jobs</h4>
+                                <div class="value">${route.length}</div>
+                            </div>
+                            <div class="stat-box">
+                                <h4>Total Travel</h4>
+                                <div class="value">${schedule.totalTravelTime} min</div>
+                            </div>
+                            <div class="stat-box">
+                                <h4>Total Job Time</h4>
+                                <div class="value">${schedule.totalJobTime} min</div>
+                            </div>
+                            <div class="stat-box">
+                                <h4>Finish Time</h4>
+                                <div class="value">${schedule.finishTime}</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            ${schedule.schedule.map(stop => {
+                                if (stop.type === 'depot') {
+                                    return `
+                                        <div class="route-stop depot">
+                                            <div class="route-stop-header">
+                                                <span class="route-stop-number">${stop.location}</span>
+                                                <span class="route-stop-time">${stop.time}</span>
+                                            </div>
+                                            ${stop.travelTime > 0 ? `
+                                                <div class="route-stop-details">
+                                                    Travel: ${stop.travelTime} min (${stop.distance} km)
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `;
+                                } else {
+                                    return `
+                                        <div class="route-stop">
+                                            <div class="route-stop-header">
+                                                <span class="route-stop-number">Stop ${stop.stopNumber}: ${stop.job.eircode}</span>
+                                                <span class="route-stop-time">${stop.startTime} - ${stop.endTime}</span>
+                                            </div>
+                                            <div class="route-stop-details">
+                                                ${stop.job.address}<br>
+                                                Job Duration: ${stop.duration} min | Travel from previous: ${stop.travelTime} min (${stop.distance} km)
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultsContent.innerHTML = html;
+        }
+
+        function hideResults() {
+            document.getElementById('resultsSection').classList.remove('visible');
+        }
+
+        function exportCSV() {
+            let csv = 'Team,Stop,Type,Location,Eircode,Start Time,End Time,Duration (min),Travel Time (min),Distance (km)\n';
+
+            for (const { team, schedule } of optimizedSchedules) {
+                for (const stop of schedule.schedule) {
+                    if (stop.type === 'depot') {
+                        csv += `${team.name},${stop.location},Depot,"${stop.location}",,${stop.time},,0,${stop.travelTime || 0},${stop.distance || 0}\n`;
+                    } else {
+                        csv += `${team.name},${stop.stopNumber},Job,"${stop.job.address}",${stop.job.eircode},${stop.startTime},${stop.endTime},${stop.duration},${stop.travelTime},${stop.distance}\n`;
+                    }
+                }
+
+                // Add summary row
+                csv += `${team.name},SUMMARY,,,,,Total Job Time: ${schedule.totalJobTime} min,Total Travel: ${schedule.totalTravelTime} min,Finish: ${schedule.finishTime}\n`;
+                csv += '\n';
+            }
+
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `install-schedule-${document.getElementById('scheduleDate').value}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Initialize
+        updateTeamsList();
+        updateJobsList();
+    </script>
+</body>
+</html>
