@@ -518,30 +518,58 @@
             dropdown.classList.add('visible');
 
             try {
-                const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&countrycodes=ie&format=json&addressdetails=1&limit=8`;
+                // Add ",Ireland" to query for better results
+                const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)},Ireland&countrycodes=ie&format=json&addressdetails=1&limit=10`;
                 const response = await fetch(url, {
                     headers: { 'User-Agent': 'SmartInstallScheduler/1.0' }
                 });
                 const data = await response.json();
 
                 if (data && data.length > 0) {
-                    dropdown.innerHTML = data.map(item => {
-                        const eircode = item.address?.postcode || '';
-                        const name = item.name || item.display_name.split(',')[0];
-                        const fullAddress = item.display_name;
+                    // Filter to only Irish results and limit to 8
+                    const irishResults = data
+                        .filter(item => item.address && item.address.country_code === 'ie')
+                        .slice(0, 8);
 
-                        return `
-                            <div class="autocomplete-item" onclick="selectAddress('${inputId}', '${eircode}', '${dropdownId}', ${item.lat}, ${item.lon}, '${fullAddress.replace(/'/g, "&apos;")}')">
-                                <div class="autocomplete-item-name">${name}${eircode ? ' - ' + eircode : ''}</div>
-                                <div class="autocomplete-item-address">${fullAddress}</div>
+                    if (irishResults.length > 0) {
+                        dropdown.innerHTML = irishResults.map(item => {
+                            const eircode = item.address?.postcode || '';
+                            const name = item.name || item.display_name.split(',')[0];
+                            const fullAddress = item.display_name;
+
+                            // Shorten address for display
+                            const addressParts = fullAddress.split(',').map(p => p.trim());
+                            const shortAddress = addressParts.slice(0, Math.min(4, addressParts.length)).join(', ');
+
+                            return `
+                                <div class="autocomplete-item" onclick="selectAddress('${inputId}', '${eircode}', '${dropdownId}', ${item.lat}, ${item.lon}, '${fullAddress.replace(/'/g, "&apos;")}')">
+                                    <div class="autocomplete-item-name">${name}${eircode ? ' - ' + eircode : ''}</div>
+                                    <div class="autocomplete-item-address">${shortAddress}</div>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        dropdown.innerHTML = `
+                            <div class="autocomplete-no-results" style="line-height: 1.5;">
+                                No exact match found. Try:<br>
+                                • Just the street name (e.g., "De Courcey Square")<br>
+                                • Area or town name<br>
+                                • Or enter the Eircode directly
                             </div>
                         `;
-                    }).join('');
+                    }
                 } else {
-                    dropdown.innerHTML = '<div class="autocomplete-no-results">No results found in Ireland</div>';
+                    dropdown.innerHTML = `
+                        <div class="autocomplete-no-results" style="line-height: 1.5;">
+                            No results found. Try:<br>
+                            • Simplifying your search<br>
+                            • Just the street or town name<br>
+                            • Or enter the Eircode directly
+                        </div>
+                    `;
                 }
             } catch (error) {
-                dropdown.innerHTML = '<div class="autocomplete-no-results">Search failed</div>';
+                dropdown.innerHTML = '<div class="autocomplete-no-results">Search failed. Please try again.</div>';
             }
         }
 
