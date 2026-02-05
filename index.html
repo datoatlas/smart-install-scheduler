@@ -603,7 +603,8 @@
             // Rate limiting: wait 1 second between requests
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(eircode)},Ireland&format=json&limit=1`;
+            // Use countrycodes parameter to restrict to Ireland (IE)
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(eircode)}&countrycodes=ie&format=json&limit=5`;
 
             try {
                 const response = await fetch(url, {
@@ -614,15 +615,26 @@
                 const data = await response.json();
 
                 if (data && data.length > 0) {
-                    const result = {
-                        lat: parseFloat(data[0].lat),
-                        lon: parseFloat(data[0].lon),
-                        address: data[0].display_name
-                    };
-                    geocodeCache[eircode] = result;
-                    return result;
+                    // Find first result that's actually in Ireland
+                    const irishResult = data.find(item => {
+                        const address = item.display_name.toLowerCase();
+                        return address.includes('ireland') ||
+                               (item.address && item.address.country_code === 'ie');
+                    });
+
+                    if (irishResult) {
+                        const result = {
+                            lat: parseFloat(irishResult.lat),
+                            lon: parseFloat(irishResult.lon),
+                            address: irishResult.display_name
+                        };
+                        geocodeCache[eircode] = result;
+                        return result;
+                    } else {
+                        throw new Error(`Eircode ${eircode} not found in Ireland. Please verify it's a valid Irish Eircode.`);
+                    }
                 } else {
-                    throw new Error(`Could not geocode ${eircode}`);
+                    throw new Error(`Could not geocode ${eircode}. Please verify it's a valid Irish Eircode.`);
                 }
             } catch (error) {
                 throw new Error(`Geocoding failed for ${eircode}: ${error.message}`);
