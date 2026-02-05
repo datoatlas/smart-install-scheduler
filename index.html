@@ -13,7 +13,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FDB813 0%, #F7931E 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -53,7 +53,7 @@
             margin-bottom: 20px;
             font-size: 1.5em;
             padding-bottom: 10px;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid #FDB813;
         }
 
         .form-grid {
@@ -86,7 +86,7 @@
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #FDB813;
         }
 
         button {
@@ -100,14 +100,15 @@
         }
 
         .btn-primary {
-            background: #667eea;
-            color: white;
+            background: #FDB813;
+            color: #000;
+            font-weight: 700;
         }
 
         .btn-primary:hover {
-            background: #5568d3;
+            background: #F7931E;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(253, 184, 19, 0.5);
         }
 
         .btn-success {
@@ -169,17 +170,18 @@
         }
 
         .stat-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FDB813 0%, #F7931E 100%);
             padding: 20px;
             border-radius: 10px;
-            color: white;
+            color: #000;
             text-align: center;
         }
 
         .stat-box h4 {
             font-size: 0.9em;
-            opacity: 0.9;
+            opacity: 0.8;
             margin-bottom: 8px;
+            font-weight: 600;
         }
 
         .stat-box .value {
@@ -203,14 +205,15 @@
         }
 
         .team-result h3 {
-            color: #667eea;
+            color: #F7931E;
             margin-bottom: 15px;
+            font-weight: 700;
         }
 
         .route-stop {
             background: white;
             padding: 15px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #FDB813;
             margin-bottom: 10px;
             border-radius: 5px;
         }
@@ -227,7 +230,7 @@
 
         .route-stop-number {
             font-weight: 700;
-            color: #667eea;
+            color: #F7931E;
         }
 
         .route-stop-time {
@@ -257,7 +260,7 @@
 
         .spinner {
             border: 4px solid #f3f4f6;
-            border-top: 4px solid #667eea;
+            border-top: 4px solid #FDB813;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -294,6 +297,7 @@
         <div class="header">
             <h1>🚚 Smart Install Scheduler</h1>
             <p>Route optimization for installation teams using Eircodes</p>
+            <p style="font-size: 0.9em; margin-top: 10px; opacity: 0.9;">Powered by Elio</p>
         </div>
 
         <!-- Team Management -->
