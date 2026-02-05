@@ -319,8 +319,8 @@
                     <input type="text" id="teamName" placeholder="e.g., Team A">
                 </div>
                 <div class="form-group">
-                    <label>Depot Eircode</label>
-                    <input type="text" id="teamDepot" placeholder="e.g., D02 XY45">
+                    <label>Depot Eircode (Irish only)</label>
+                    <input type="text" id="teamDepot" placeholder="e.g., D02 XY45" maxlength="8">
                 </div>
                 <div class="form-group" style="align-self: end;">
                     <button class="btn-primary" onclick="addTeam()">Add Team</button>
@@ -335,8 +335,8 @@
             <h2>Installation Jobs</h2>
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Job Eircode *</label>
-                    <input type="text" id="jobEircode" placeholder="e.g., T12 X2R6">
+                    <label>Job Eircode (Irish only) *</label>
+                    <input type="text" id="jobEircode" placeholder="e.g., T12 X2R6" maxlength="8">
                 </div>
                 <div class="form-group">
                     <label>Duration (minutes) *</label>
@@ -410,20 +410,45 @@
         // Set default date to today
         document.getElementById('scheduleDate').valueAsDate = new Date();
 
+        // Validate Irish Eircode format
+        function isValidEircode(eircode) {
+            // Irish Eircode format: XXX XXXX (7 characters with space in middle)
+            // Example: D02 XY45, T12 X2R6, H91 YXW8
+            // First 3 chars: routing key, Last 4 chars: unique identifier
+            const eircodePattern = /^[A-Z0-9]{3}\s?[A-Z0-9]{4}$/i;
+            return eircodePattern.test(eircode.trim());
+        }
+
+        function formatEircode(eircode) {
+            // Ensure proper spacing in Eircode
+            const cleaned = eircode.replace(/\s/g, '').toUpperCase();
+            if (cleaned.length === 7) {
+                return cleaned.substring(0, 3) + ' ' + cleaned.substring(3);
+            }
+            return eircode.toUpperCase();
+        }
+
         // Team Management
         function addTeam() {
             const name = document.getElementById('teamName').value.trim();
-            const depot = document.getElementById('teamDepot').value.trim().toUpperCase();
+            const depot = document.getElementById('teamDepot').value.trim();
 
             if (!name || !depot) {
                 alert('Please enter team name and depot Eircode');
                 return;
             }
 
+            if (!isValidEircode(depot)) {
+                alert('Invalid Irish Eircode format.\n\nPlease use format: XXX XXXX\nExample: D02 XY45, T12 X2R6, H91 YXW8\n\nNote: This is for Irish Eircodes only, not UK postcodes.');
+                return;
+            }
+
+            const formattedDepot = formatEircode(depot);
+
             const team = {
                 id: Date.now().toString(),
                 name: name,
-                depotEircode: depot,
+                depotEircode: formattedDepot,
                 depotCoords: null
             };
 
@@ -482,7 +507,7 @@
 
         // Job Management
         function addJob() {
-            const eircode = document.getElementById('jobEircode').value.trim().toUpperCase();
+            const eircode = document.getElementById('jobEircode').value.trim();
             const duration = parseInt(document.getElementById('jobDuration').value);
             const teamId = document.getElementById('jobTeam').value;
             const windowStart = document.getElementById('jobWindowStart').value;
@@ -493,14 +518,21 @@
                 return;
             }
 
+            if (!isValidEircode(eircode)) {
+                alert('Invalid Irish Eircode format.\n\nPlease use format: XXX XXXX\nExample: D02 XY45, T12 X2R6, H91 YXW8\n\nNote: This is for Irish Eircodes only, not UK postcodes.');
+                return;
+            }
+
             if (duration <= 0) {
                 alert('Duration must be greater than 0');
                 return;
             }
 
+            const formattedEircode = formatEircode(eircode);
+
             const job = {
                 id: Date.now().toString(),
-                eircode: eircode,
+                eircode: formattedEircode,
                 coords: null,
                 duration: duration,
                 timeWindow: (windowStart && windowEnd) ? { start: windowStart, end: windowEnd } : null,
