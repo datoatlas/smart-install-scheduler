@@ -300,6 +300,70 @@
             grid-template-columns: 1fr 1fr 1fr;
             gap: 15px;
         }
+
+        /* Autocomplete Dropdown */
+        .autocomplete-container {
+            position: relative;
+        }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #FDB813;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: none;
+        }
+
+        .autocomplete-dropdown.visible {
+            display: block;
+        }
+
+        .autocomplete-item {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background: #fffbf0;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .autocomplete-item-address {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .autocomplete-loading {
+            padding: 12px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        .autocomplete-no-results {
+            padding: 12px;
+            text-align: center;
+            color: #999;
+        }
     </style>
 </head>
 <body>
@@ -319,8 +383,11 @@
                     <input type="text" id="teamName" placeholder="e.g., Team A">
                 </div>
                 <div class="form-group">
-                    <label>Depot Eircode (Irish only)</label>
-                    <input type="text" id="teamDepot" placeholder="e.g., D02 XY45" maxlength="8">
+                    <label>Depot Eircode or Address (Irish only)</label>
+                    <div class="autocomplete-container">
+                        <input type="text" id="teamDepot" placeholder="Type Eircode or address..." autocomplete="off">
+                        <div class="autocomplete-dropdown" id="teamDepotDropdown"></div>
+                    </div>
                 </div>
                 <div class="form-group" style="align-self: end;">
                     <button class="btn-primary" onclick="addTeam()">Add Team</button>
@@ -335,8 +402,11 @@
             <h2>Installation Jobs</h2>
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Job Eircode (Irish only) *</label>
-                    <input type="text" id="jobEircode" placeholder="e.g., T12 X2R6" maxlength="8">
+                    <label>Job Eircode or Address (Irish only) *</label>
+                    <div class="autocomplete-container">
+                        <input type="text" id="jobEircode" placeholder="Type Eircode or address..." autocomplete="off">
+                        <div class="autocomplete-dropdown" id="jobEircodeDropdown"></div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Duration (minutes) *</label>
@@ -428,28 +498,141 @@
             return eircode.toUpperCase();
         }
 
+        // Autocomplete functionality
+        let autocompleteTimeout = null;
+
+        async function searchAddress(query, dropdownId, inputId) {
+            if (query.length < 3) {
+                document.getElementById(dropdownId).classList.remove('visible');
+                return;
+            }
+
+            // If it looks like an Eircode (XXX XXXX format), don't autocomplete
+            if (isValidEircode(query)) {
+                document.getElementById(dropdownId).classList.remove('visible');
+                return;
+            }
+
+            const dropdown = document.getElementById(dropdownId);
+            dropdown.innerHTML = '<div class="autocomplete-loading">Searching...</div>';
+            dropdown.classList.add('visible');
+
+            try {
+                const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&countrycodes=ie&format=json&addressdetails=1&limit=8`;
+                const response = await fetch(url, {
+                    headers: { 'User-Agent': 'SmartInstallScheduler/1.0' }
+                });
+                const data = await response.json();
+
+                if (data && data.length > 0) {
+                    dropdown.innerHTML = data.map(item => {
+                        const eircode = item.address?.postcode || '';
+                        const name = item.name || item.display_name.split(',')[0];
+                        const fullAddress = item.display_name;
+
+                        return `
+                            <div class="autocomplete-item" onclick="selectAddress('${inputId}', '${eircode}', '${dropdownId}', ${item.lat}, ${item.lon}, '${fullAddress.replace(/'/g, "&apos;")}')">
+                                <div class="autocomplete-item-name">${name}${eircode ? ' - ' + eircode : ''}</div>
+                                <div class="autocomplete-item-address">${fullAddress}</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    dropdown.innerHTML = '<div class="autocomplete-no-results">No results found in Ireland</div>';
+                }
+            } catch (error) {
+                dropdown.innerHTML = '<div class="autocomplete-no-results">Search failed</div>';
+            }
+        }
+
+        function selectAddress(inputId, eircode, dropdownId, lat, lon, address) {
+            const input = document.getElementById(inputId);
+
+            if (eircode && isValidEircode(eircode)) {
+                input.value = formatEircode(eircode);
+            } else {
+                // If no Eircode, show address and cache the coordinates
+                input.value = address.split(',')[0];
+                input.dataset.lat = lat;
+                input.dataset.lon = lon;
+                input.dataset.address = address;
+            }
+
+            document.getElementById(dropdownId).classList.remove('visible');
+        }
+
+        function setupAutocomplete(inputId, dropdownId) {
+            const input = document.getElementById(inputId);
+
+            input.addEventListener('input', function() {
+                clearTimeout(autocompleteTimeout);
+                const query = this.value.trim();
+
+                if (query.length < 3) {
+                    document.getElementById(dropdownId).classList.remove('visible');
+                    return;
+                }
+
+                // Debounce: wait 500ms after user stops typing
+                autocompleteTimeout = setTimeout(() => {
+                    searchAddress(query, dropdownId, inputId);
+                }, 500);
+            });
+
+            input.addEventListener('focus', function() {
+                const query = this.value.trim();
+                if (query.length >= 3 && !isValidEircode(query)) {
+                    searchAddress(query, dropdownId, inputId);
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !document.getElementById(dropdownId).contains(e.target)) {
+                    document.getElementById(dropdownId).classList.remove('visible');
+                }
+            });
+        }
+
+        // Initialize autocomplete after page loads
+        window.addEventListener('DOMContentLoaded', function() {
+            setupAutocomplete('teamDepot', 'teamDepotDropdown');
+            setupAutocomplete('jobEircode', 'jobEircodeDropdown');
+        });
+
         // Team Management
         function addTeam() {
             const name = document.getElementById('teamName').value.trim();
-            const depot = document.getElementById('teamDepot').value.trim();
+            const depotInput = document.getElementById('teamDepot');
+            const depot = depotInput.value.trim();
 
             if (!name || !depot) {
-                alert('Please enter team name and depot Eircode');
+                alert('Please enter team name and depot location');
                 return;
             }
 
-            if (!isValidEircode(depot)) {
-                alert('Invalid Irish Eircode format.\n\nPlease use format: XXX XXXX\nExample: D02 XY45, T12 X2R6, H91 YXW8\n\nNote: This is for Irish Eircodes only, not UK postcodes.');
+            let depotEircode = depot;
+            let depotCoords = null;
+
+            // Check if user selected an address from autocomplete
+            if (depotInput.dataset.lat && depotInput.dataset.lon) {
+                depotCoords = {
+                    lat: parseFloat(depotInput.dataset.lat),
+                    lon: parseFloat(depotInput.dataset.lon)
+                };
+                depotEircode = depot; // Use the address/name as identifier
+            } else if (isValidEircode(depot)) {
+                depotEircode = formatEircode(depot);
+            } else {
+                alert('Please enter a valid Irish Eircode or select an address from the suggestions');
                 return;
             }
-
-            const formattedDepot = formatEircode(depot);
 
             const team = {
                 id: Date.now().toString(),
                 name: name,
-                depotEircode: formattedDepot,
-                depotCoords: null
+                depotEircode: depotEircode,
+                depotCoords: depotCoords
             };
 
             teams.push(team);
@@ -457,7 +640,10 @@
             updateJobTeamDropdown();
 
             document.getElementById('teamName').value = '';
-            document.getElementById('teamDepot').value = '';
+            depotInput.value = '';
+            delete depotInput.dataset.lat;
+            delete depotInput.dataset.lon;
+            delete depotInput.dataset.address;
         }
 
         function removeTeam(id) {
@@ -507,19 +693,15 @@
 
         // Job Management
         function addJob() {
-            const eircode = document.getElementById('jobEircode').value.trim();
+            const eircodeInput = document.getElementById('jobEircode');
+            const eircode = eircodeInput.value.trim();
             const duration = parseInt(document.getElementById('jobDuration').value);
             const teamId = document.getElementById('jobTeam').value;
             const windowStart = document.getElementById('jobWindowStart').value;
             const windowEnd = document.getElementById('jobWindowEnd').value;
 
             if (!eircode || !duration || !teamId) {
-                alert('Please fill in Eircode, Duration, and Team');
-                return;
-            }
-
-            if (!isValidEircode(eircode)) {
-                alert('Invalid Irish Eircode format.\n\nPlease use format: XXX XXXX\nExample: D02 XY45, T12 X2R6, H91 YXW8\n\nNote: This is for Irish Eircodes only, not UK postcodes.');
+                alert('Please fill in Location, Duration, and Team');
                 return;
             }
 
@@ -528,23 +710,43 @@
                 return;
             }
 
-            const formattedEircode = formatEircode(eircode);
+            let jobEircode = eircode;
+            let coords = null;
+            let address = '';
+
+            // Check if user selected an address from autocomplete
+            if (eircodeInput.dataset.lat && eircodeInput.dataset.lon) {
+                coords = {
+                    lat: parseFloat(eircodeInput.dataset.lat),
+                    lon: parseFloat(eircodeInput.dataset.lon)
+                };
+                address = eircodeInput.dataset.address || eircode;
+                jobEircode = eircode; // Use the address/name as identifier
+            } else if (isValidEircode(eircode)) {
+                jobEircode = formatEircode(eircode);
+            } else {
+                alert('Please enter a valid Irish Eircode or select an address from the suggestions');
+                return;
+            }
 
             const job = {
                 id: Date.now().toString(),
-                eircode: formattedEircode,
-                coords: null,
+                eircode: jobEircode,
+                coords: coords,
                 duration: duration,
                 timeWindow: (windowStart && windowEnd) ? { start: windowStart, end: windowEnd } : null,
                 assignedTeam: teamId,
-                address: ''
+                address: address
             };
 
             jobs.push(job);
             updateJobsList();
 
             // Clear form
-            document.getElementById('jobEircode').value = '';
+            eircodeInput.value = '';
+            delete eircodeInput.dataset.lat;
+            delete eircodeInput.dataset.lon;
+            delete eircodeInput.dataset.address;
             document.getElementById('jobDuration').value = '';
             document.getElementById('jobWindowStart').value = '';
             document.getElementById('jobWindowEnd').value = '';
